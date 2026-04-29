@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAM Optimizer — Free Up RAM for Games & Apps</title>
+  <meta name="description" content="A free Windows tool that frees up RAM instantly without closing your programs. Perfect for gaming, streaming, and heavy workloads." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --bg2:      #161b22;
+      --bg3:      #1c2128;
+      --border:   #30363d;
+      --blue:     #1f6aa5;
+      --blue-h:   #2d8fd4;
+      --green:    #238636;
+      --green-h:  #2ea043;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --radius:   12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: var(--blue-h); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-logo { font-size: 18px; font-weight: 700; color: var(--text); }
+    .nav-logo span { color: var(--blue-h); }
+    .nav-links { display: flex; gap: 28px; }
+    .nav-links a { color: var(--muted); font-size: 14px; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .nav-dl {
+      background: var(--green); color: #fff !important;
+      padding: 7px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      transition: background .2s;
+    }
+    .nav-dl:hover { background: var(--green-h) !important; text-decoration: none !important; }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 100px 24px 80px;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(31,106,165,.25), transparent);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(31,106,165,.15);
+      border: 1px solid rgba(31,106,165,.4);
+      color: var(--blue-h);
+      font-size: 13px; font-weight: 600;
+      padding: 4px 14px; border-radius: 99px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 800; line-height: 1.1;
+      letter-spacing: -1px;
+      margin-bottom: 20px;
+    }
+    .hero h1 span { color: var(--blue-h); }
+    .hero p {
+      font-size: clamp(16px, 2vw, 20px);
+      color: var(--muted); max-width: 560px;
+      margin: 0 auto 40px;
+    }
+    .btn-group { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 28px; border-radius: var(--radius);
+      font-size: 16px; font-weight: 700; transition: all .2s;
+      cursor: pointer; text-decoration: none !important;
+    }
+    .btn-primary {
+      background: var(--green); color: #fff;
+      box-shadow: 0 0 24px rgba(35,134,54,.35);
+    }
+    .btn-primary:hover { background: var(--green-h); transform: translateY(-1px); }
+    .btn-secondary {
+      background: var(--bg2); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--muted); transform: translateY(-1px); }
+
+    .hero-note {
+      margin-top: 20px; font-size: 13px; color: var(--muted);
+    }
+
+    /* ── Stats bar ── */
+    .stats {
+      display: flex; justify-content: center; gap: 60px; flex-wrap: wrap;
+      padding: 40px 24px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat { text-align: center; }
+    .stat-num { font-size: 32px; font-weight: 800; color: var(--blue-h); }
+    .stat-lbl { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Section ── */
+    section { padding: 80px 24px; max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--blue-h);
+      margin-bottom: 12px;
+    }
+    .section-title { font-size: clamp(24px, 3vw, 36px); font-weight: 800; margin-bottom: 14px; }
+    .section-sub { font-size: 16px; color: var(--muted); max-width: 520px; }
+
+    /* ── Features ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px; margin-top: 48px;
+    }
+    .feature-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 24px;
+      transition: border-color .2s, transform .2s;
+    }
+    .feature-card:hover { border-color: var(--blue); transform: translateY(-3px); }
+    .feature-icon {
+      font-size: 32px; margin-bottom: 16px;
+    }
+    .feature-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* ── How it works ── */
+    .steps { display: flex; flex-direction: column; gap: 0; margin-top: 48px; position: relative; }
+    .steps::before {
+      content: ""; position: absolute; left: 23px; top: 28px;
+      bottom: 28px; width: 2px; background: var(--border);
+    }
+    .step { display: flex; gap: 20px; align-items: flex-start; padding: 20px 0; }
+    .step-num {
+      flex-shrink: 0; width: 46px; height: 46px;
+      background: var(--blue); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800; position: relative; z-index: 1;
+    }
+    .step-body h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+    .step-body p { font-size: 14px; color: var(--muted); }
+
+    /* ── Screenshot mockup ── */
+    .mockup-wrap {
+      margin-top: 60px;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+    }
+    .mockup-bar {
+      background: var(--bg3); padding: 10px 16px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mockup-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .mockup-title { flex: 1; text-align: center; font-size: 13px; color: var(--muted); }
+    .mockup-body { padding: 32px; }
+    .mockup-ram-label { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .mockup-bar-track {
+      background: var(--bg3); border-radius: 8px; height: 18px;
+      overflow: hidden; margin-bottom: 24px;
+    }
+    .mockup-bar-fill {
+      height: 100%; width: 68%; background: var(--blue);
+      border-radius: 8px;
+      animation: pulse 3s ease-in-out infinite alternate;
+    }
+    @keyframes pulse { to { width: 72%; } }
+    .mockup-stats { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 28px; }
+    .mockup-stat {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 20px; flex: 1; min-width: 100px;
+    }
+    .mockup-stat-lbl { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .mockup-stat-val { font-size: 18px; font-weight: 800; }
+    .mockup-trim-btn {
+      display: block; width: 100%; padding: 16px;
+      background: var(--blue); border-radius: 10px;
+      text-align: center; font-size: 16px; font-weight: 800;
+      color: #fff; cursor: default;
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      max-width: 1100px; margin: 0 auto; padding: 0 24px 100px;
+    }
+    .cta-box {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 60px 40px; text-align: center;
+      background-image: radial-gradient(ellipse 60% 60% at 50% 100%, rgba(31,106,165,.15), transparent);
+    }
+    .cta-box h2 { font-size: clamp(24px, 3vw, 36px); font-weight: 800; margin-bottom: 14px; }
+    .cta-box p { font-size: 16px; color: var(--muted); margin-bottom: 36px; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center; padding: 28px 24px;
+      font-size: 13px; color: var(--muted);
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <span class="nav-logo">RAM<span>Optimizer</span></span>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How it works</a>
+    <a href="https://github.com/this1guy756-ai/ram-optimizer" target="_blank">GitHub</a>
+    <a href="https://github.com/this1guy756-ai/ram-optimizer/releases/latest" class="nav-dl">Download Free</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="badge">Free Windows Tool</div>
+  <h1>Give your PC<br><span>more RAM</span> instantly</h1>
+  <p>RAM Optimizer frees up unused memory from background apps in one click — without closing anything. More RAM for your game. Smoother PC. Zero bloat.</p>
+  <div class="btn-group">
+    <a href="https://github.com/this1guy756-ai/ram-optimizer/releases/latest" class="btn btn-primary">
+      ⬇ Download Free
+    </a>
+    <a href="https://github.com/this1guy756-ai/ram-optimizer" target="_blank" class="btn btn-secondary">
+      View on GitHub
+    </a>
+  </div>
+  <p class="hero-note">Windows 10 &amp; 11 &nbsp;·&nbsp; No install needed &nbsp;·&nbsp; Single .exe file</p>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat"><div class="stat-num">1-click</div><div class="stat-lbl">to free RAM</div></div>
+  <div class="stat"><div class="stat-num">0</div><div class="stat-lbl">programs closed</div></div>
+  <div class="stat"><div class="stat-num">100%</div><div class="stat-lbl">free to use</div></div>
+  <div class="stat"><div class="stat-num">&lt; 5MB</div><div class="stat-lbl">app size</div></div>
+</div>
+
+<!-- Features -->
+<section id="features">
+  <div class="section-label">Features</div>
+  <div class="section-title">Everything you need to keep your PC fast</div>
+  <p class="section-sub">Simple tools that do exactly what they say — no fluff, no subscriptions, no hidden stuff.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Trim All</h3>
+      <p>Free unused RAM from every running process in one click. Instant results — no restarts needed.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎮</div>
+      <h3>Game Mode</h3>
+      <p>Type your game's name and hit Boost. Clears all background apps before you launch, so your game gets maximum RAM.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📋</div>
+      <h3>Process List</h3>
+      <p>See exactly how much RAM every app is using. Trim individual processes or search for the culprit.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">👁️</div>
+      <h3>Auto Watch</h3>
+      <p>Set a RAM limit on any app — like Chrome at 1.5 GB. RAM Optimizer will automatically trim it whenever it goes over.</p>
+    </div>
+  </div>
+</section>
+
+<!-- App mockup -->
+<section style="padding-top: 0;">
+  <div class="mockup-wrap">
+    <div class="mockup-bar">
+      <div class="mockup-dot" style="background:#ff5f57"></div>
+      <div class="mockup-dot" style="background:#febc2e"></div>
+      <div class="mockup-dot" style="background:#28c840"></div>
+      <div class="mockup-title">RAM Optimizer</div>
+    </div>
+    <div class="mockup-body">
+      <div class="mockup-ram-label">RAM  10.9 GB / 16.0 GB  (68%)  &nbsp; Free: 5.1 GB</div>
+      <div class="mockup-bar-track"><div class="mockup-bar-fill"></div></div>
+      <div class="mockup-stats">
+        <div class="mockup-stat"><div class="mockup-stat-lbl">Used RAM</div><div class="mockup-stat-val">10.9 GB</div></div>
+        <div class="mockup-stat"><div class="mockup-stat-lbl">Free RAM</div><div class="mockup-stat-val">5.1 GB</div></div>
+        <div class="mockup-stat"><div class="mockup-stat-lbl">Total RAM</div><div class="mockup-stat-val">16.0 GB</div></div>
+        <div class="mockup-stat"><div class="mockup-stat-lbl">Pagefile</div><div class="mockup-stat-val">1.2 GB</div></div>
+      </div>
+      <div class="mockup-trim-btn">TRIM ALL PROCESSES</div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section id="how-it-works">
+  <div class="section-label">How it works</div>
+  <div class="section-title">Simple, safe, and instant</div>
+  <p class="section-sub">No tricks. Here's exactly what happens when you hit Trim.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>You click Trim</h3>
+        <p>RAM Optimizer scans every running process and identifies pages of memory that haven't been touched recently.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Idle pages move to standby</h3>
+        <p>Using Windows' built-in <code style="background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:13px">EmptyWorkingSet</code> API, those pages are moved out of active RAM into a standby list — freeing physical memory instantly.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Your game gets the freed RAM</h3>
+        <p>The newly freed memory is available for whatever needs it — your game, your stream, your render. Nothing crashes.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Background apps recover naturally</h3>
+        <p>If a background app needs its pages back, Windows gives them back instantly. Everything keeps working — just with less waste.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-box">
+    <h2>Ready to free up your RAM?</h2>
+    <p>Download the free .exe — no install, no Python, no setup. Just run it.</p>
+    <div class="btn-group">
+      <a href="https://github.com/this1guy756-ai/ram-optimizer/releases/latest" class="btn btn-primary">
+        ⬇ Download Free for Windows
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <p>
+    RAM Optimizer &nbsp;·&nbsp;
+    <a href="https://github.com/this1guy756-ai/ram-optimizer" target="_blank">GitHub</a>
+    &nbsp;·&nbsp; Free &amp; open source
+  </p>
+</footer>
+
+</body>
+</html>
