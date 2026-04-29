@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """RAM Optimizer - Desktop Application"""
 
-import os, sys, time, threading, ctypes
+import os, sys, time, threading, ctypes, json
+import urllib.request, urllib.parse
 from datetime import datetime
 
 # Auto-install missing packages on first run
@@ -24,6 +25,67 @@ _ensure_deps()
 
 import customtkinter as ctk
 import psutil
+
+# ── License ───────────────────────────────────────────────────────────────────
+# Set GUMROAD_PRODUCT_ID to your real product ID in Step 4.
+# While it stays "YOUR_PRODUCT_ID" the app runs without a key (dev mode).
+
+GUMROAD_PRODUCT_ID = "YOUR_PRODUCT_ID"
+_LICENSE_FILE      = os.path.join(os.environ.get("LOCALAPPDATA",""), "RAMOptimizer", "license.json")
+_RECHECK_DAYS      = 7   # re-verify key every 7 days
+
+def _verify_with_gumroad(key):
+    """Returns True=valid  False=invalid/revoked  None=no internet."""
+    body = urllib.parse.urlencode({
+        "product_id":           GUMROAD_PRODUCT_ID,
+        "license_key":          key.strip(),
+        "increment_uses_count": "false",
+    }).encode()
+    req = urllib.request.Request(
+        "https://api.gumroad.com/v2/licenses/verify",
+        data=body, method="POST",
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return json.loads(r.read()).get("success", False)
+    except Exception:
+        return None
+
+def _load_license():
+    try:
+        with open(_LICENSE_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+def _save_license(key, email=""):
+    os.makedirs(os.path.dirname(_LICENSE_FILE), exist_ok=True)
+    with open(_LICENSE_FILE, "w") as f:
+        json.dump({"key": key, "email": email, "verified_at": time.time()}, f)
+
+def _delete_license():
+    try:
+        os.remove(_LICENSE_FILE)
+    except Exception:
+        pass
+
+def is_activated():
+    if GUMROAD_PRODUCT_ID == "YOUR_PRODUCT_ID":
+        return True                        # dev mode — no key needed yet
+    data = _load_license()
+    if not data:
+        return False
+    stale = time.time() - data.get("verified_at", 0) > _RECHECK_DAYS * 86400
+    if stale:
+        result = _verify_with_gumroad(data["key"])
+        if result is True:
+            _save_license(data["key"], data.get("email", ""))
+        elif result is False:
+            _delete_license()
+            return False
+        # None = no internet → allow offline grace period
+    return True
 
 # ── Windows API ──────────────────────────────────────────────────────────────
 
@@ -80,6 +142,95 @@ def get_sys_mem():
         "total": v.total, "used": v.used, "avail": v.available, "pct": v.percent,
         "sw_total": s.total, "sw_used": s.used,
     }
+
+# ── Activation window ────────────────────────────────────────────────────────
+
+class ActivationWindow(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.title("RAM Optimizer — Activation")
+        self.geometry("500x440")
+        self.resizable(False, False)
+        self.activated = False
+        self._build()
+
+    def _build(self):
+        # Top colour band
+        band = ctk.CTkFrame(self, height=6, corner_radius=0, fg_color=BLUE)
+        band.pack(fill="x")
+
+        ctk.CTkLabel(self, text="RAM Optimizer",
+                     font=ctk.CTkFont(size=26, weight="bold")).pack(pady=(32, 4))
+        ctk.CTkLabel(self, text="Enter your license key to activate",
+                     font=ctk.CTkFont(size=14), text_color="gray60").pack()
+
+        # Key entry
+        box = ctk.CTkFrame(self, fg_color="transparent")
+        box.pack(fill="x", padx=48, pady=28)
+
+        ctk.CTkLabel(box, text="License Key", font=ctk.CTkFont(size=13),
+                     anchor="w").pack(fill="x")
+        self._key_entry = ctk.CTkEntry(
+            box, placeholder_text="XXXX-XXXX-XXXX-XXXX",
+            height=44, font=ctk.CTkFont(size=15),
+        )
+        self._key_entry.pack(fill="x", pady=(6, 0))
+        self._key_entry.bind("<Return>", lambda _: self._activate())
+
+        # Error label
+        self._err = ctk.CTkLabel(box, text="", font=ctk.CTkFont(size=12),
+                                  text_color="#e05050", wraplength=380)
+        self._err.pack(fill="x", pady=(8, 0))
+
+        # Activate button
+        self._btn = ctk.CTkButton(
+            self, text="Activate", height=46,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            fg_color=GREEN, hover_color="#125012",
+            command=self._activate,
+        )
+        self._btn.pack(fill="x", padx=48, pady=(4, 0))
+
+        # Purchase link
+        ctk.CTkLabel(self, text="Don't have a key?", font=ctk.CTkFont(size=12),
+                     text_color="gray55").pack(pady=(18, 2))
+        buy_btn = ctk.CTkButton(
+            self, text="Buy RAM Optimizer", width=180, height=34,
+            fg_color="transparent", border_width=1,
+            font=ctk.CTkFont(size=13),
+            command=lambda: __import__("webbrowser").open(
+                "https://this1guy756-ai.github.io/ram-optimizer"
+            ),
+        )
+        buy_btn.pack()
+
+    def _activate(self):
+        key = self._key_entry.get().strip()
+        if not key:
+            self._err.configure(text="Please enter your license key.")
+            return
+        self._btn.configure(state="disabled", text="Checking…")
+        self._err.configure(text="")
+        threading.Thread(target=self._check, args=(key,), daemon=True).start()
+
+    def _check(self, key):
+        result = _verify_with_gumroad(key)
+        self.after(0, lambda: self._done(key, result))
+
+    def _done(self, key, result):
+        self._btn.configure(state="normal", text="Activate")
+        if result is True:
+            _save_license(key)
+            self.activated = True
+            self.destroy()
+        elif result is False:
+            self._err.configure(
+                text="Invalid or expired key. Check your purchase email and try again."
+            )
+        else:
+            self._err.configure(
+                text="Could not connect to verify. Check your internet and try again."
+            )
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
@@ -162,8 +313,16 @@ class App(ctk.CTk):
             btn.pack(padx=8, pady=3)
             self._nav_btns[key] = btn
 
+        ctk.CTkButton(
+            self._sidebar, text="  Deactivate", anchor="w",
+            width=152, height=34, corner_radius=8,
+            fg_color="transparent", hover_color=("#ffcccc","#3a1010"),
+            font=ctk.CTkFont(size=12), text_color="gray50",
+            command=self._deactivate,
+        ).pack(padx=8, side="bottom", pady=(0, 4))
+
         ctk.CTkLabel(self._sidebar, text="v1.0", font=ctk.CTkFont(size=10),
-                     text_color="gray50").pack(side="bottom", pady=10)
+                     text_color="gray50").pack(side="bottom", pady=(10, 2))
 
     # ── Overview ──────────────────────────────────────────────────────────────
 
@@ -602,8 +761,17 @@ class App(ctk.CTk):
         self._log_box.delete("1.0", "end")
         self._log_box.configure(state="disabled")
 
+    def _deactivate(self):
+        _delete_license()
+        self.destroy()
+
 
 # ── Launch ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    if not is_activated():
+        win = ActivationWindow()
+        win.mainloop()
+        if not win.activated:
+            sys.exit(0)
     App().mainloop()
